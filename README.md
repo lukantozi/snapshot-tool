@@ -8,7 +8,6 @@ A CLI tool for periodic system snapshots: tracks tasks, CPU, memory, and swap, l
 git clone git@github.com:lukantozi/snapshot-tool.git
 python -m venv .venv
 source .venv/bin/activate
-cd snapshot-tool
 pip install -U ./snapshot-tool
 ```
 
