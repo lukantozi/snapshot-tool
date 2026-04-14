@@ -11,7 +11,7 @@ import argparse
 import psutil
 import time
 import json
-import subprocess
+import os
 import pprint
 
 
@@ -28,7 +28,7 @@ def main():
 
     for _ in range(snapshot_n):
         tasks = count_tasks()
-        cpu_st = cpuStats(psutil.cpu_times())
+        cpu_st = CpuStats(psutil.cpu_times_percent())
         mem_st = memory_stats()
         sw_mem_st = swap_memory_stats()
         time_stamp = int(time.time())
@@ -43,7 +43,7 @@ def main():
             f.write('\n')
             f.write('\n')
 
-        subprocess.run(['clear'])
+        os.system("clear")
         pprint.pprint(snapshot, width=120, sort_dicts=False)
         time.sleep(interval)
 
@@ -55,15 +55,14 @@ def count_tasks():
     zombie = 0
 
     for proc in psutil.process_iter(['status']):
-        match proc.info['status']:
-            case "running":
-                running += 1
-            case "sleeping":
-                sleeping += 1
-            case "stopped":
-                stopped += 1
-            case "zombie":
-                zombie += 1
+        try:
+            match proc.info['status']:
+                case "running": running += 1
+                case "sleeping": sleeping += 1
+                case "stopped": stopped += 1
+                case "zombie": zombie += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
 
     total = running + sleeping + stopped + zombie
     procs = {"total": total, "running": running, "sleeping": sleeping, "stopped": stopped,
@@ -71,7 +70,7 @@ def count_tasks():
     return procs
 
 
-class cpuStats:
+class CpuStats:
     def __init__(self, cpu):
         self.user = cpu.user
         self.system = cpu.system
@@ -82,29 +81,20 @@ class cpuStats:
         return cpu_out
 
 
-def cpu_stats():
-    cpu_t = psutil.cpu_times()
-    user = cpu_t.user
-    system = cpu_t.system
-    idle = cpu_t.idle
-    cpu_stat_out = {"user": user, "system": system, "idle": idle}
-    return cpu_stat_out
-
-
 def memory_stats():
     mem_st = psutil.virtual_memory()
-    total = mem_st.total
-    free = mem_st.free
-    used = mem_st.used
+    total = mem_st.total // 1024
+    free = mem_st.free // 1024
+    used = mem_st.used // 1024
     mem_st_out = {"total": total, "free": free, "used": used}
     return mem_st_out
 
 
 def swap_memory_stats():
     sw_mem_st = psutil.swap_memory()
-    total = sw_mem_st.total
-    free = sw_mem_st.free
-    used = sw_mem_st.used
+    total = sw_mem_st.total // 1024
+    free = sw_mem_st.free // 1024
+    used = sw_mem_st.used // 1024
     sw_mem_out = {"total": total, "free": free, "used": used}
     return sw_mem_out
 
